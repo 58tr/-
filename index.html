@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор паролей</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a192f, #112240);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: auto;
+            position: relative;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(17, 34, 64, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(64, 156, 255, 0.2);
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            text-align: center;
+            color: #64ffda;
+            margin-bottom: 20px;
+            font-size: 28px;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            color: #ccd6f6;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(23, 42, 69, 0.8);
+            color: #e6f1ff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            box-shadow: 0 0 0 3px rgba(100, 255, 218, 0.5);
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(45deg, #0a192f, #64ffda);
+            color: #0a192f;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .btn::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::after {
+            left: 100%;
+        }
+
+        .passwords-container {
+            margin-top: 30px;
+        }
+
+        .password-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            background: rgba(23, 42, 69, 0.8);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            color: #e6f1ff;
+        }
+
+        .password-item:hover {
+            transform: translateX(5px);
+            background: rgba(35, 53, 84, 0.9);
+        }
+
+        .password-text {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 16px;
+            word-break: break-all;
+        }
+
+        .strength-indicator {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-left: 10px;
+            flex-shrink: 0;
+        }
+
+        .strength-1 { background: #f44336; box-shadow: 0 0 10px #f44336; }
+        .strength-2 { background: #ff9800; }
+        .strength-3 { background: #ffc107; }
+        .strength-4 { background: #8bc34a; }
+        .strength-5 { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
+
+        .strength-label {
+            font-size: 12px;
+            color: #ccd6f6;
+            margin-left: 10px;
+        }
+
+        .copy-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .copy-notification.show {
+            opacity: 1;
+        }
+
+        /* Пузыри */
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(100, 255, 218, 0.3), transparent 70%);
+            border: 1px solid rgba(100, 255, 218, 0.2);
+            animation: floatUp 12s linear infinite;
+            z-index: 1;
+        }
+
+        /* Анимации */
+        @keyframes floatUp {
+            0%   { transform: translateY(100vh) scale(0.5); opacity: 0; }
+            10%  { opacity: 0.7; }
+            90%  { opacity: 0.7; }
+            100% { transform: translateY(-100px) scale(1); opacity: 0; }
+        }
+
+        /* Переключатель темы */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(23, 42, 69, 0.8);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #64ffda;
+            font-size: 20px;
+            z-index: 100;
+        }
+
+        @media (max-width: 500px) {
+            .container { 
+                padding: 20px; 
+                margin: 10px;
+            }
+            h1 { 
+                font-size: 24px; 
+                margin-bottom: 15px;
+            }
+            .password-text { 
+                font-size: 14px; 
+            }
+            .theme-toggle { 
+                top: 10px; 
+                right: 10px; 
+                width: 35px;
+                height: 35px;
+                font-size: 18px;
+            }
+            .password-item {
+                padding: 10px 12px;
+            }
+            .btn {
+                padding: 12px;
+                font-size: 16px;
+            }
+            input {
+                padding: 10px 12px;
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 350px) {
+            .container { 
+                padding: 15px; 
+            }
+            h1 { 
+                font-size: 22px; 
+            }
+            .password-text { 
+                font-size: 13px; 
+            }
+            .strength-label {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+    
+    <div class="container">
+        <h1>Генератор паролей</h1>
+        
+        <div class="input-group">
+            <label for="keyword">Ключевое слово:</label>
+            <input type="text" id="keyword" placeholder="Введите ключевое слово (например: school58)" maxlength="10">
+        </div>
+        
+        <button class="btn" id="generateBtn">Сгенерировать пароли</button>
+        
+        <div class="passwords-container" id="passwordsContainer"></div>
+    </div>
+    
+    <div class="copy-notification" id="copyNotification">Пароль скопирован!</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const generateBtn = document.getElementById('generateBtn');
+            const keywordInput = document.getElementById('keyword');
+            const passwordsContainer = document.getElementById('passwordsContainer');
+            const copyNotification = document.getElementById('copyNotification');
+            const themeToggle = document.getElementById('themeToggle');
+            
+            const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+            const numbers = '0123456789';
+            const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            
+            let isDarkTheme = true;
+            
+            generateBtn.addEventListener('click', function() {
+                const keyword = keywordInput.value.trim();
+                if (keyword.length < 2) {
+                    alert('Пожалуйста, введите ключевое слово (минимум 2 символа)');
+                    return;
+                }
+                passwordsContainer.innerHTML = '';
+                
+                // Генерируем пароли от самого сложного (зеленый) к самому простому (красный)
+                for (let i = 5; i >= 1; i--) {
+                    const password = generatePassword(keyword, i);
+                    const passwordItem = createPasswordItem(password, i);
+                    passwordsContainer.appendChild(passwordItem);
+                }
+            });
+            
+            themeToggle.addEventListener('click', function() {
+                isDarkTheme = !isDarkTheme;
+                document.body.style.background = isDarkTheme 
+                    ? 'linear-gradient(135deg, #0a192f, #112240)' 
+                    : 'linear-gradient(135deg, #1a2980, #26d0ce)';
+                themeToggle.textContent = isDarkTheme ? '🌙' : '☀️';
+            });
+            
+            function generatePassword(keyword, strength) {
+                // Уровень 5 (зеленый) - самый сложный
+                if (strength === 5) {
+                    let password = keyword;
+                    const numSymbols = 2;
+                    const numNumbers = 2;
+                    const numLetters = 2;
+                    
+                    for (let i = 0; i < numSymbols; i++) {
+                        password = insertRandom(password, symbols);
+                    }
+                    for (let i = 0; i < numNumbers; i++) {
+                        password = insertRandom(password, numbers);
+                    }
+                    for (let i = 0; i < numLetters; i++) {
+                        password = insertRandom(password, letters);
+                    }
+                    
+                    return password;
+                }
+                
+                // Уровень 4
+                if (strength === 4) {
+                    return keyword + 
+                           symbols[Math.floor(Math.random() * symbols.length)] + 
+                           symbols[Math.floor(Math.random() * symbols.length)] + 
+                           numbers[Math.floor(Math.random() * numbers.length)] + 
+                           letters[Math.floor(Math.random() * letters.length)];
+                }
+                
+                // Уровень 3
+                if (strength === 3) {
+                    return keyword + 
+                           symbols[Math.floor(Math.random() * symbols.length)] + 
+                           numbers[Math.floor(Math.random() * numbers.length)] + 
+                           letters[Math.floor(Math.random() * letters.length)];
+                }
+                
+                // Уровень 2
+                if (strength === 2) {
+                    return keyword + 
+                           symbols[Math.floor(Math.random() * symbols.length)] + 
+                           numbers[Math.floor(Math.random() * numbers.length)];
+                }
+                
+                // Уровень 1 (красный) - самый простой
+                return keyword + symbols[Math.floor(Math.random() * symbols.length)];
+            }
+            
+            function insertRandom(password, chars) {
+                const randomChar = chars[Math.floor(Math.random() * chars.length)];
+                const position = Math.floor(Math.random() * (password.length + 1));
+                return password.slice(0, position) + randomChar + password.slice(position);
+            }
+            
+            function createPasswordItem(password, strength) {
+                const item = document.createElement('div');
+                item.className = 'password-item';
+                
+                const textContainer = document.createElement('div');
+                textContainer.style.display = 'flex';
+                textContainer.style.alignItems = 'center';
+                textContainer.style.flex = '1';
+                
+                const text = document.createElement('span');
+                text.className = 'password-text';
+                text.textContent = password;
+                
+                const strengthLabel = document.createElement('span');
+                strengthLabel.className = 'strength-label';
+                strengthLabel.textContent = getStrengthLabel(strength);
+                
+                textContainer.appendChild(text);
+                textContainer.appendChild(strengthLabel);
+                
+                const indicator = document.createElement('div');
+                indicator.className = 'strength-indicator strength-' + strength;
+                
+                item.appendChild(textContainer);
+                item.appendChild(indicator);
+                
+                item.addEventListener('click', function() {
+                    copyToClipboard(password);
+                    showCopyNotification();
+                });
+                
+                return item;
+            }
+            
+            function getStrengthLabel(strength) {
+                switch(strength) {
+                    case 5: return 'Очень сложный';
+                    case 4: return 'Сложный';
+                    case 3: return 'Средний';
+                    case 2: return 'Простой';
+                    case 1: return 'Очень простой';
+                    default: return '';
+                }
+            }
+            
+            function copyToClipboard(text) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            }
+            
+            function showCopyNotification() {
+                copyNotification.classList.add('show');
+                setTimeout(function() {
+                    copyNotification.classList.remove('show');
+                }, 2000);
+            }
+            
+            function createBubbles() {
+                const body = document.body;
+                for (let i = 0; i < 40; i++) {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'bubble';
+                    
+                    // Разные размеры пузырей
+                    const size = 5 + Math.random() * 20;
+                    bubble.style.width = `${size}px`;
+                    bubble.style.height = `${size}px`;
+                    
+                    bubble.style.left = `${Math.random() * 100}%`;
+                    bubble.style.animationDelay = `${Math.random() * 15}s`;
+                    bubble.style.animationDuration = `${8 + Math.random() * 10}s`;
+                    body.appendChild(bubble);
+                }
+            }
+            
+            createBubbles();
+        });
+    </script>
+</body>
+</html>
